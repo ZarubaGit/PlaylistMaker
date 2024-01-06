@@ -56,6 +56,28 @@
 
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/historyContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="16dp"
+        android:visibility="visible">
+
+        <TextView
+            android:id="@+id/historyTitle"
+            style="@style/TextFromToolBar"
+            android:text="@string/you_searched"
+            android:layout_marginStart="12dp"
+            android:layout_gravity="center"
+            android:visibility="gone"/>
+
+        <Button
+            android:id="@+id/clearHistoryButton"
+            style="@style/refreshButton"
+            android:text="Очистить историю"
+            android:layout_gravity="center"/>
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:layout_marginTop="16dp"
@@ -63,6 +85,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         tools:listitem="@layout/item_track"/>
+
 <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent"

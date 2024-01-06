@@ -1,10 +1,12 @@
 package com.example.playlistmaker
 
+import SearchHistory
 import android.annotation.SuppressLint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
@@ -31,10 +33,7 @@ class SearchActivity : AppCompatActivity() {
         .build()
 
     private val iTunseService = retrofit.create(ApiSong::class.java)
-
     private val trackList = mutableListOf<Track>()
-
-
     private lateinit var inputEditText: EditText
     private lateinit var clearButton: ImageView
     private lateinit var linearLayout: LinearLayout
@@ -45,7 +44,11 @@ class SearchActivity : AppCompatActivity() {
     private lateinit var imageHolder: ImageView
     private lateinit var textHolderMessage: TextView
     private lateinit var udpateButton: Button
+    private lateinit var searchHistory: SearchHistory
+    private lateinit var clearHistoryButton: Button
     private var lastSearchQuery: String? = null
+
+
 
 
     @SuppressLint("MissingInflatedId")
@@ -58,10 +61,17 @@ class SearchActivity : AppCompatActivity() {
         linearLayout = findViewById(R.id.container)
         backButton = findViewById(R.id.backInMain)
         recyclerView = findViewById(R.id.recyclerView)
-        setupRecyclerView()
         textHolderMessage = findViewById(R.id.placeholderMessage)
         udpateButton = findViewById(R.id.refreshButton)
         imageHolder = findViewById(R.id.imageHolder)
+        searchHistory = SearchHistory(this)
+        clearHistoryButton = findViewById(R.id.clearHistoryButton)
+
+        clearHistoryButton.setOnClickListener {
+            clearSearchHistory()
+        }
+
+        setupRecyclerView()
 
         // Установка обработчика для кнопки "Очистить поисковый запрос"
         clearButton.setOnClickListener {
@@ -71,6 +81,9 @@ class SearchActivity : AppCompatActivity() {
             textHolderMessage.visibility = View.GONE
             recyclerView.visibility = View.GONE
             imageHolder.visibility = View.GONE
+            searchHistory.clearSearchHistory()
+            adapter.notifyDataSetChanged()
+            updateUI()
         }
 
         // Установка TextWatcher для поля ввода
@@ -115,6 +128,24 @@ class SearchActivity : AppCompatActivity() {
         }
     }
 
+    private fun clearSearchHistory() {
+        searchHistory.clearSearchHistory()
+        updateUI()
+    }
+
+    private fun updateUI() {
+        val history = searchHistory.getSearchHistory()
+
+        if (inputEditText.text.isEmpty() && history.isNotEmpty()) {
+            textHolderMessage.text = getString(R.string.you_searched)
+            recyclerView.visibility = View.VISIBLE
+            adapter.setTrackList(history)  // Обновление данных в адаптере
+        } else {
+            textHolderMessage.text = ""
+            recyclerView.visibility = View.GONE
+        }
+    }
+
     private fun performSearch(query: String) {
         iTunseService.search(query).enqueue(object : Callback<SongResponse> {
             @SuppressLint("NotifyDataSetChanged")
@@ -142,6 +173,7 @@ class SearchActivity : AppCompatActivity() {
                         getString(R.string.trouble_with_network),
                         response.code().toString()
                     )
+                    updateUI()
                 }
             }
 
@@ -151,6 +183,7 @@ class SearchActivity : AppCompatActivity() {
                 imageHolder.setImageResource(R.drawable.network_error)
                 showMessage(getString(R.string.trouble_with_network), t.message.toString())
                 udpateButton.visibility = View.VISIBLE
+                updateUI()
             }
         })
     }
@@ -169,7 +202,7 @@ class SearchActivity : AppCompatActivity() {
 
 
     private fun setupRecyclerView() {
-        adapter = TrackAdapter(trackList)
+        adapter = TrackAdapter(trackList, searchHistory)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
     }
